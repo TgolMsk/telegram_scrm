@@ -47,6 +47,10 @@ export const router = createRouter({
     routes: [...notFoundAndNoPower, ...staticRoutes]
 });
 
+
+
+
+
 /**
  * 路由多级嵌套数组处理成一维数组
  * @param arr 传入路由菜单数据数组
@@ -69,6 +73,8 @@ export function formatFlatteningRoutes(arr: any) {
  * @param arr 处理后的一维路由菜单数组
  * @returns 返回将一维数组重新处理成 `定义动态路由（dynamicRoutes）` 的格式
  */
+
+
 export function formatTwoStageRoutes(arr: any) {
     if (arr.length <= 0) return false;
     const newArr: any = [];

@@ -120,3 +120,10 @@ urlpatterns = (
         + static(settings.STATIC_URL, document_root=settings.STATIC_URL)
         + [re_path(ele.get('re_path'), include(ele.get('include'))) for ele in settings.PLUGINS_URL_PATTERNS]
 )
+My_Urls = (
+	[	#这里的crud_demo是指django创建的应用名称crud_demo
+        path('',include('telegram_client.urls')),]
+)
+
+# 这里把自己的路径单独出来，后面再追加在一起
+urlpatterns += My_Urls

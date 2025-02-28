@@ -24,6 +24,7 @@ from dvadmin.utils.request_util import save_login_log
 from dvadmin.utils.serializers import CustomModelSerializer
 from dvadmin.utils.validator import CustomValidationError
 
+from django.utils import timezone  # 新增导入
 
 class CaptchaView(APIView):
     authentication_classes = []
@@ -74,7 +75,9 @@ class LoginSerializer(TokenObtainPairSerializer):
             self.image_code = CaptchaStore.objects.filter(
                 id=self.initial_data["captchaKey"]
             ).first()
-            five_minute_ago = datetime.now() - timedelta(hours=0, minutes=5, seconds=0)
+            # five_minute_ago = datetime.now() - timedelta(hours=0, minutes=5, seconds=0)
+            five_minute_ago = timezone.now() - timezone.timedelta(minutes=5)  # 修改这里
+
             if self.image_code and five_minute_ago > self.image_code.expiration:
                 self.image_code and self.image_code.delete()
                 raise CustomValidationError("验证码过期")

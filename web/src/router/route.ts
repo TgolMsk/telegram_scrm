@@ -45,7 +45,14 @@ export const dynamicRoutes: Array<RouteRecordRaw> = [
 			isIframe: false,
 			icon: 'iconfont icon-gerenzhongxin',
 		},
+	},
+	{
+		path: '/api/telegram_contact/:account/', // account为A表ID
+		name: 'TelegramContactModelViewSet',
+		component: () => import('/@/views/telegram_contact/index.vue'),
+		meta: { title: '联系人管理' }
 	}
+
 ];
 
 /**

@@ -18,6 +18,7 @@ else:
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 platforms.C_FORCE_ROOT = True
+app.autodiscover_tasks(['telegram_client'])  # 指定应用名称
 
 
 def retry_base_task_error():

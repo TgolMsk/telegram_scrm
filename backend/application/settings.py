@@ -60,7 +60,17 @@ INSTALLED_APPS = [
     "captcha",
     "channels",
     "dvadmin.system",
+    "telegram_client",
+
+
 ]
+
+#主要添加如下代码
+# My_Apps = [
+# 	"telegram_client",  #新的应用写在这里
+# ]
+#
+# INSTALLED_APPS += My_Apps
 
 MIDDLEWARE = [
     "dvadmin.utils.middleware.HealthCheckMiddleware",
@@ -107,6 +117,9 @@ DATABASES = {
         "PASSWORD": DATABASE_PASSWORD,
         "HOST": DATABASE_HOST,
         "PORT": DATABASE_PORT,
+        'OPTIONS': {
+            'charset': 'utf8mb4',  # 确保设置了 utf8mb4 字符集
+        },
     }
 }
 AUTH_USER_MODEL = "system.Users"
@@ -141,7 +154,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False
+USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -379,6 +392,8 @@ API_MODEL_MAP = {
 
 DJANGO_CELERY_BEAT_TZ_AWARE = False
 CELERY_TIMEZONE = "Asia/Shanghai"  # celery 时区问题
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 # 静态页面压缩
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
@@ -393,7 +408,11 @@ TABLE_PREFIX = locals().get('TABLE_PREFIX', "")
 SYSTEM_CONFIG = {}
 # 字典配置
 DICTIONARY_CONFIG = {}
-
+# # ================================================= #
+# # ******************** TG API key ***************** #
+# # ================================================= #
+TG_API_ID = 1025907
+TG_API_HASH = '452b0359b988148995f22ff0f4229750'
 # ================================================= #
 # ******************** 插件配置 ******************** #
 # ================================================= #
@@ -412,3 +431,15 @@ PLUGINS_URL_PATTERNS = []
 #from dvadmin_uniapp.settings import *
 # ...
 # ********** 一键导入插件配置结束 **********
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SOCKET_CONNECT_TIMEOUT': 5,  # 连接超时
+            'SOCKET_TIMEOUT': 5,         # 读写超时
+        },
+        'KEY_PREFIX': 'tg_bot',  # 缓存键前缀
+    }
+}
