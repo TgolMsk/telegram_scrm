@@ -14,7 +14,6 @@ router.register("api/TelegramModelViewSet", TelegramModelViewSet,basename="in_co
 
 
 
-
 urlpatterns = [
 ]
 urlpatterns += router.urls

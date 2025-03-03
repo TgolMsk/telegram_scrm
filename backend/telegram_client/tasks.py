@@ -84,11 +84,6 @@ def stop_listener(phone: str):
         cache.set(f'stop_failed_{phone}', '1', timeout=300)
         raise
 
-
-
-
-
-
 @shared_task
 def input_code(phone_number, code):
     """包装异步操作为同步任务"""

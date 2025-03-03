@@ -7,6 +7,7 @@ import QrCodeScan from "./verification.vue"
 import Telegram_process from "./telegram_process.vue"
 import {dictionary} from "/@/utils/dictionary";
 import NewMessage from "./new_message.vue";
+import Telegram_account from "./account_list.vue";
 
 //此处为crudOptions配置
 export default function ({ crudExpose}: { crudExpose: CrudExpose}): CreateCrudOptionsRet {
@@ -46,6 +47,7 @@ export default function ({ crudExpose}: { crudExpose: CrudExpose}): CreateCrudOp
                         click() {
                             return exportRequest(crudExpose.getSearchFormData())
                         }
+
                     },
                     add: {
                         show: auth('TelegramModelViewSet:Create'),  // 修改权限标识
@@ -79,6 +81,21 @@ export default function ({ crudExpose}: { crudExpose: CrudExpose}): CreateCrudOp
                 },
             },
             columns: {
+
+                account_list: {
+                    title: "操作",
+                    type: "text",
+                    column: {
+                        component: {
+                            //引用自定义组件
+                            name: Telegram_account,
+                        }
+                    },
+                    form: {
+                        show:false,
+                    },
+
+                },
                 phone_number: {
                     title: 'TG手机号',
                     type: 'input',

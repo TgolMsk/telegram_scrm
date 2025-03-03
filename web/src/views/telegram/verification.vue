@@ -4,11 +4,6 @@
 <!--  <el-button type="primary" :icon="EditPen"  v-if="row.login_mode === 1"  circle round />-->
 <!-- 验证码登录 -->
   <el-button type="primary"   :icon="EditPen"  v-if="row.login_mode === 1"   @click="open" circle round />
-
-  <router-link :to="{ name: 'TelegramContactModelViewSet', params: { account: 2 }}">
-    用户详情
-  </router-link>
-
 </template>
 
 <script lang="ts">
@@ -28,11 +23,6 @@ export default defineComponent(
     {
   name: "QrCodeScan",
   setup() {
-
-
-
-
-
     const open = () => {
       ElMessageBox.prompt('请输入Telegram客户端接收到的验证码', '验证码登录', {
         confirmButtonText: '提交',
@@ -46,9 +36,6 @@ export default defineComponent(
             })
           })
          }
-
-
-
     const getScope = inject('get:scope')
     const { index, row, mode} = getScope()
     const open_qr = async () => {

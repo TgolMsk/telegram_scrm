@@ -135,6 +135,8 @@ class Telegram(CoreModel):
         verbose_name="IPC地址",
         help_text="格式示例: unix:/tmp/tg_123.sock 或 tcp://127.0.0.1:5000"
     )
+    avatar = models.ImageField(upload_to='telegram_avatars/',null=True, blank=True)
+
 
     # 存储前调用，如果不符合直接报错
     def clean(self):

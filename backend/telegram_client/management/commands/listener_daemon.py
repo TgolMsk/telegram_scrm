@@ -1,6 +1,7 @@
 # telegram_client/management/commands/listener_daemon.py
 import asyncio
 import logging
+import os
 import time
 from typing import Optional
 from django.core.management.base import BaseCommand
@@ -65,6 +66,7 @@ class Command(BaseCommand):
                 message_type = MessageType.PRIVATE
                 logger.info(message_type.value)
                 logger.info("这是一个个人消息（私聊）")
+                logger.info(event)
             elif isinstance(peer, PeerChat):
                 message_type = MessageType.GROUP
                 logger.info(message_type.value)
@@ -128,16 +130,16 @@ class Command(BaseCommand):
             await self._save_message(message_data)
 
             # 日志记录
-            logger.info(
-                "收到新消息",
-                extra={
-                    "sender_id": sender.id,
-                    "sender_name": getattr(sender, 'username', '未知用户'),
-                    "chat_id": chat.id,
-                    "message_id": event.id,
-                    "content": event.raw_text[:100]  # 日志只记录前100字符
-                }
-            )
+            # logger.info(
+            #     "收到新消息",
+            #     extra={
+            #         "sender_id": sender.id,
+            #         "sender_name": getattr(sender, 'username', '未知用户'),
+            #         "chat_id": chat.id,
+            #         "message_id": event.id,
+            #         "content": event.raw_text[:100]  # 日志只记录前100字符
+            #     }
+            # )
 
         except Exception as e:
             logger.error(
@@ -174,7 +176,29 @@ class Command(BaseCommand):
                 await self._update_session(account, client.session.save())
 
             me = await client.get_me()
-            await self._update_telegram_id(account, me.id)
+            # 获取头像
+            avatar_bytes = await client.download_profile_photo(entity="me",file=bytes,download_big=False)
+            logger.info("打印头像信息")
+            # logger.info(avatar_bytes)
+            save_dir = os.path.join(settings.MEDIA_ROOT, 'telegram_avatars')
+            os.makedirs(save_dir, exist_ok=True)
+            file_name = f"avatar_{me.id}.jpg"
+            filepath = os.path.join(save_dir, file_name)
+            avatar_path = None
+            if avatar_bytes:
+                with open(filepath, 'wb') as f:
+                    f.write(avatar_bytes)
+                    avatar_path = os.path.join('telegram_avatars', file_name)
+                    logger.info(avatar_path)
+                    #保存到数据库
+
+
+
+
+
+
+
+            await self._update_telegram_id(account, me.id, avatar_path)
             logger.info(me.id)
             logger.info(
                 "客户端连接成功",
@@ -211,7 +235,7 @@ class Command(BaseCommand):
         for contact in contacts.users:
             # 生成状态文本
             status_content = self._get_status_text(contact.status)
-
+            logger.info(contact)
             # 构建当前数据
             current_data = {
                 "phone_number": contact.phone,
@@ -414,10 +438,13 @@ class Command(BaseCommand):
             logger.info("会话信息已更新")
 
     @sync_to_async
-    def _update_telegram_id(self, account: Telegram, telegram_id: int):
+    def _update_telegram_id(self, account: Telegram, telegram_id: int,avatar_path:str=None):
         """异步更新数据库会话"""
         with transaction.atomic():
+            logger.info(avatar_path)
             account.telegram_id = telegram_id
+            account.avatar = avatar_path
+            account.save(update_fields=['avatar'])
             account.save(update_fields=['telegram_id'])
             logger.info("Telegram_id已更新")
     async def _run_listener(self, phone: str, max_retries: int):
@@ -425,7 +452,6 @@ class Command(BaseCommand):
         retry_count = 0
         client = None
         ipc_server = None
-
         try:
             # 增强预检查
             @sync_to_async
@@ -477,17 +503,13 @@ class Command(BaseCommand):
                         account.save(update_fields=['process_id', 'process_url', 'process_result'])
 
                     await update_process_info()
-
                     # 更新状态为在线
                     @sync_to_async
                     def set_online():
                         account.status = Telegram.Status.ONLINE
                         account.save(update_fields=['status'])
-
                     await set_online()
-
                     retry_count = 0  # 重置重试计数器
-
                     # 保持连接（带心跳检测）
                     while True:
                         if not await self._validate_session(client):
@@ -507,7 +529,6 @@ class Command(BaseCommand):
                     break
                 finally:
                     await self._cleanup_resources(client, ipc_server, account)
-
             if retry_count >= max_retries:
                 logger.critical("达到最大重试次数，永久终止监听")
 
@@ -515,7 +536,6 @@ class Command(BaseCommand):
                 def set_error_status():
                     account.status = Telegram.Status.ERROR
                     account.save(update_fields=['status'])
-
                 await set_error_status()
 
         except Exception as e:

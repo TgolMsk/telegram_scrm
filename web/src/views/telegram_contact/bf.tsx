@@ -3,27 +3,20 @@ import _ from 'lodash-es';
 import * as api from './api';
 import { request } from '/@/utils/service';
 import {auth} from "/@/utils/authFunction";
-import {useRoute} from "vue-router";
-import {dictionary} from "/@/utils/dictionary";
-import Account_sendmessage from "/@/views/telegram_contact/sendmessage.vue";
+import { useRoute } from 'vue-router'
 
-//此处为crudOptions配置
+import { watch } from 'vue'
+
 export default function ({ crudExpose}: { crudExpose: CrudExpose}): CreateCrudOptionsRet {
     const pageRequest = async (query: any) => {
         const route = useRoute()
-        if (route?.params?.account) {
-            if (route.params.account) {
-                const contactId = route.params.account
-                if(contactId==="account"){
-                    return await api.GetList(query);
-                }
-                if(contactId){
-                    query.account= contactId
-                }
-            }
+        const contactId = route.params.account
+        if(contactId==="account"){
+            return await api.GetList(query);
         }
-
-
+        if(contactId){
+            query.account= contactId
+        }
         return await api.GetList(query);
     };
     const editRequest = async ({ form, row }: EditReq) => {
@@ -42,7 +35,6 @@ export default function ({ crudExpose}: { crudExpose: CrudExpose}): CreateCrudOp
     const exportRequest = async (query: UserPageQuery) => {
         return await api.exportData(query)
     };
-
     return {
         crudOptions: {
             request: {
@@ -54,144 +46,162 @@ export default function ({ crudExpose}: { crudExpose: CrudExpose}): CreateCrudOp
             actionbar: {
                 buttons: {
                     export:{
-                        // 注释编号:django-vue3-admin-crud210716:注意这个auth里面的值，最好是使用index.vue文件里面的name值并加上请求动作的单词
-                        show: auth('CrudDemoModelViewSet:Export'),
-                        text:"导出",//按钮文字
-                        title:"导出",//鼠标停留显示的信息
+                        show: auth('TelegramContactViewSet:Export'),
+                        text:"导出",
+                        title:"导出",
                         click(){
                             return exportRequest(crudExpose.getSearchFormData())
-                            // return exportRequest(crudExpose!.getSearchFormData())    // 注意这个crudExpose!.getSearchFormData()，一些低版本的环境是需要添加!的
                         }
                     },
                     add: {
-                        show: auth('CrudDemoModelViewSet:Create'),
+                        show: auth('TelegramContactViewSet:Create'),
                     },
                 }
             },
             rowHandle: {
-                //固定右侧
                 fixed: 'right',
                 width: 200,
                 buttons: {
                     view: {
                         type: 'text',
                         order: 1,
-                        show: auth('TelegramContactModelViewSet:Retrieve')
+                        show: auth('TelegramContactViewSet:Retrieve')
                     },
                     edit: {
                         type: 'text',
                         order: 2,
-                        show: auth('TelegramContactModelViewSet:Update')
+                        show: auth('TelegramContactViewSet:Update')
                     },
                     copy: {
                         type: 'text',
                         order: 3,
-                        show: auth('TelegramContactModelViewSet:Copy')
+                        show: auth('TelegramContactViewSet:Copy')
                     },
                     remove: {
                         type: 'text',
                         order: 4,
-                        show: auth('TelegramContactModelViewSet:Delete')
+                        show: auth('TelegramContactViewSet:Delete')
                     },
                 },
             },
             columns: {
-                account_list: {
-                    title: "发起会话",
-                    type: "text",
-                    column: {
-                        component: {
-                            //引用自定义组件
-                            name: Account_sendmessage,
-                        }
-                    },
+                account: {
+                    title: '所属账号',
+                    type: 'dict-select',
+                    search: { show: true },
+                    dict: dict({
+                        url: '/api/TelegramModelViewSet/',
+                        value: 'id',
+                        label: 'username'
+                    }),
                     form: {
-                        show:false,
-                    },
-
+                        rules: [{ required: true, message: '必须选择关联账号' }],
+                        component: {
+                            props: {
+                                filterable: true,
+                                remote: true,
+                                remoteMethod: async (query: string) => {
+                                    const res = await request({
+                                        url: '/api/TelegramModelViewSet/',
+                                        params: { search: query }
+                                    });
+                                    return res.data.map((item: any) => ({
+                                        value: item.id,
+                                        label: item.username
+                                    }));
+                                }
+                            }
+                        }
+                    }
                 },
                 contact_id: {
                     title: '用户ID',
                     type: 'number',
                     search: { show: true },
                     form: {
-                       show:false,
+                        rules: [{ required: true, message: '用户ID必填' }],
+                        component: {
+                            placeholder: 'Telegram用户唯一ID',
+                            precision: 0
+                        }
                     }
                 },
                 user_status: {
                     title: '最近在线时间',
                     type: 'text',
-                    form: {
-                        show:false,
-                    },
                     search: { show: true }
                 },
                 phone_number: {
                     title: '手机号',
                     type: 'text',
                     form: {
-                        show:false,
-                    },
+                        rules: [{
+                            pattern: /^\+\d{1,3}\d{4,14}$/,
+                            message: '格式：+国际区号号码（例如：+8613812345678）'
+                        }]
+                    }
                 },
                 username: {
                     title: '用户名',
                     type: 'text',
                     form: {
-                        show:false,
-                    },
+                        component: {
+                            prefix: '@',
+                            placeholder: '例如：zhangsan'
+                        }
+                    }
                 },
-                first_name: {
-                    title: '名字', type: 'text' ,
-                    form: {
-                        show:false,
-                    },
-                },
-                last_name: {
-                    title: '姓氏', type: 'text' ,
-                    form: {
-                        show:false,
-                    },
-                },
-                remark: {
-                    title: '备注名称', type: 'text',
-                    form: {
-                        show:false,
-                    },
-                },
+                first_name: { title: '名字', type: 'text' },
+                last_name: { title: '姓氏', type: 'text' },
+                remark: { title: '备注名称', type: 'text' },
                 premium: {
                     title: '会员状态',
                     type: 'dict-switch',
-                    form: {
-                        show:false,
-                    },
+                    dict: dict({
+                        data: [
+                            { value: true, label: '会员' },
+                            { value: false, label: '普通' }
+                        ]
+                    })
                 },
                 last_interaction: {
                     title: '最后互动',
                     type: 'datetime',
                     form: {
-                        show:false,
-                    },
+                        component: {
+                            format: 'YYYY-MM-DD HH:mm:ss',
+                            valueFormat: 'YYYY-MM-DD HH:mm:ss'
+                        }
+                    }
                 },
                 message_count: {
                     title: '消息总数',
                     type: 'number',
-                    form: {
-                        show:false,
-                    },
+                    column: {
+                        component: {
+                            show: false
+                        }
+                    }
                 },
                 schedule_enabled: {
                     title: '定时消息',
                     type: 'dict-switch',
                     dict: dict({
-                        data: dictionary('button_status_bool'),
-                    }),
+                        data: [
+                            { value: true, label: '启用' },
+                            { value: false, label: '停用' }
+                        ]
+                    })
                 },
                 ai_chat_switch: {
                     title: 'AI回复',
                     type: 'dict-switch',
                     dict: dict({
-                        data: dictionary('button_status_bool'),
-                    }),
+                        data: [
+                            { value: true, label: '开启' },
+                            { value: false, label: '关闭' }
+                        ]
+                    })
                 },
                 ai_reply_delay_config: {
                     title: '延迟设置',
@@ -207,9 +217,11 @@ export default function ({ crudExpose}: { crudExpose: CrudExpose}): CreateCrudOp
                     column: {
                         show: false
                     },
-
+                    form: {
+                        show: false
+                    }
                 }
             }
-        },
+        }
     };
 }
